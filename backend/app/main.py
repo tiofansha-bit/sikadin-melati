@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import akuntansi, bku, dashboard, laporan, laporan_melati, rekap, bok, jadwal, kode_surat, master, penomoran, rencana, spj, surat
+from . import akuntansi, bku, dashboard, laporan, laporan_kegiatan, laporan_melati, rekap, bok, jadwal, kode_surat, master, penomoran, rencana, spj, surat
 from .calc import hitung
 from . import core
 from .core import Gagal, get_db, perlu_baca
@@ -66,6 +66,7 @@ app.include_router(rencana.router)
 app.include_router(jadwal.router)
 app.include_router(surat.router)
 app.include_router(kode_surat.router)
+app.include_router(laporan_kegiatan.router)
 app.include_router(penomoran.router)
 app.include_router(spj.router)
 app.include_router(akuntansi.router)

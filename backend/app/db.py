@@ -423,6 +423,8 @@ def init_db() -> None:
         con.execute("INSERT OR IGNORE INTO jenis_nomor(kode,nama,klasifikasi,unit,keterangan) VALUES(?,?,?,?,?)", (kode, nama, klas, unit, ket))
     from . import kode_surat   # database kode klasifikasi surat
     kode_surat.pasang(con)
+    from . import laporan_kegiatan   # laporan kronologis + foto kegiatan per ST (+ pejabat Verifikator)
+    laporan_kegiatan.pasang(con)
     # Migrasi Tahap 4 (spd versi awal per-petugas bernomor sendiri, belum berisi data): buat ulang bila masih kosong
     spd_sql = (con.execute("SELECT sql FROM sqlite_master WHERE name='spd'").fetchone() or {}).get("sql") or ""
     if "nomor_urut" in spd_sql and con.execute("SELECT COUNT(*) c FROM spd").fetchone()["c"] == 0:

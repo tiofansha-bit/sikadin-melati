@@ -16,7 +16,7 @@ SPJ_ALUR = [("Draft", "Pegawai mengisi realisasi & bukti"), ("Diajukan", "Menung
 
 ST_LANGKAH = [("Buka menu <b>Surat</b> → tab <b>Siap diterbitkan</b>", "Daftar jadwal yang belum punya Surat Tugas. Centang semuanya atau sebagian → <b>Terbitkan yang dipilih</b>."),
               ("Unduh dokumen", "Klik <b>Dokumen</b> pada ST: Surat Tugas, SPD, rincian biaya, kuitansi, daftar hadir, dll. — tiap dokumen punya tombol <b>PDF</b> dan <b>DOCX</b>."),
-              ("Unggah ke Srikandi", "Pilih <b>DOCX Srikandi (ST + SPD)</b> atau <b>PDF Srikandi (ST + SPD)</b>. Kode tanda tangan elektronik di dalamnya jangan diubah."),
+              ("Unggah ke Srikandi", "Pilih <b>DOCX Srikandi (ST + SPD)</b> atau <b>PDF Srikandi (ST + SPD)</b>. Kode tanda tangan elektronik (<b>${ttd_pengirim}</b>, <b>${nama_pengirim}</b>) di blok tanda tangan Kuasa Pengguna Anggaran jangan diubah, dihapus, atau dipindah: Srikandi mengganti kode itu dengan QR tanda tangan, jadi ruang kosong di atas dan di bawahnya sengaja disediakan."),
               ("Klik <b>Tandai sudah diunggah ke Srikandi</b>", "Supaya semua orang tahu surat sedang menunggu tanda tangan elektronik."),
               ("Setelah ditandatangani: <b>Unggah PDF hasil Srikandi</b>", "SIKADIN membaca nomor naskah dari PDF; konfirmasi untuk mencatatnya. Progres menjadi <b>Selesai di Srikandi</b> (3/3).")]
 
@@ -53,7 +53,7 @@ peran("program", "Pengelola Program", "Membuat rencana, jadwal, dan menerbitkan 
        ["Tidak bisa", "Mengubah pagu/RAB, memverifikasi/membayar SPJ, melihat data BLUD"]],
       [["Dashboard", "Pekerjaan menunggu, serapan, peringatan"], ["Perencanaan (RPK/POA)", "Rencana kegiatan dan matriks POA"], ["Jadwal Dinas Luar", "Kalender, tabel, dan generate jadwal bulanan"], ["Surat", "Menerbitkan ST/SPD, nomor surat"], ["Rekap Perjalanan Dinas", "Rekap per nama/tempat/bulan"], ["Realisasi &amp; SPJ", "Memantau SPJ; belanja non-perjalanan"], ["Pagu Anggaran BOK/DAU", "Hanya melihat"]],
       [("Buat <b>Rencana</b>", "Perencanaan → <b>+ Rencana</b>: pilih baris RAB, bulan, lokasi, durasi, jumlah petugas/hari/frekuensi. Biaya dihitung otomatis dari tarif Perbup."),
-       ("Ajukan rencana", "Rencana diajukan kepada Pembuat Surat Tugas/Kepala (atau disetujui sendiri sesuai pengaturan)."),
+       ("Ajukan rencana", "Tombol <b>Ajukan</b> pada rencana Draft mengirimkannya kepada Pembuat Surat Tugas/Kepala. Bila Anda berhak menyetujui, tersedia juga <b>Ajukan &amp; setujui</b> yang langsung menyetujui."),
        ("Buat <b>Jadwal</b>", "Jadwal Dinas Luar → pilih rencana yang disetujui, tanggal, petugas. Atau gunakan <b>Generate</b> untuk satu bulan penuh."),
        ("Terbitkan <b>Surat Tugas</b>", "Menu Surat → <b>Siap diterbitkan</b> → centang jadwal → <b>Terbitkan yang dipilih</b>."),
        ("Pantau SPJ petugas", "Menu Realisasi &amp; SPJ menampilkan status SPJ tiap petugas yang otomatis dibuat.")],
@@ -80,7 +80,7 @@ peran("pembuat_surat", "Pembuat Surat Tugas", "Hak istimewa menyetujui & menerbi
        ["Tidak bisa", "Mengubah pagu/RAB; memverifikasi atau membayar SPJ; melihat <b>data uang BLUD</b> (SPJ, serapan, laporan keuangan)"]],
       [["Dashboard", "Pekerjaan menunggu: usulan, jadwal, ST menunggu Srikandi"], ["Perencanaan", "Meninjau/menyetujui usulan, atau membuat rencana sendiri"], ["Jadwal Dinas Luar", "Menyetujui jadwal usulan, atau membuat sendiri"], ["Surat", "Terbit massal, dokumen, alur Srikandi, nomor surat umum"], ["Rekap Perjalanan Dinas", "Rekap setahun/bulanan"], ["Kalkulator Biaya", "Menghitung perkiraan biaya"]],
       [("Tinjau usulan", "Menu <b>Perencanaan</b>: rencana Diajukan → <b>Setujui</b>/<b>Tolak</b> (alasan wajib). <b>Jadwal Dinas Luar</b>: jadwal Diusulkan → <b>Setujui</b>."),
-       ("Atau buat sendiri", "Boleh membuat rencana &amp; jadwal sendiri lalu menyetujuinya, selama masih dalam pagu baris RAB.")] + [(a, b) for a, b in ST_LANGKAH],
+       ("Atau buat sendiri", "Boleh membuat rencana &amp; jadwal sendiri, selama masih dalam pagu baris RAB. Pada rencana Draft tersedia <b>Ajukan &amp; setujui</b> (langsung Disetujui) atau <b>Ajukan saja</b>.")] + [(a, b) for a, b in ST_LANGKAH],
       [P("Alur Srikandi (progres 0/3 → 3/3)", "h2"),
        Alur([("Diunggah", "Dokumen diunduh &amp; diunggah ke Srikandi"), ("Ditandai", "Tombol Tandai di SIKADIN"), ("Nomor dicatat", "Nomor naskah dari PDF"), ("PDF final", "Tersimpan di SIKADIN")], warna=G7), Spacer(1, 6),
        tabel([["Tahap", "Yang Anda lakukan"], ["0/3", "ST terbit di SIKADIN. Unduh DOCX/PDF Srikandi."], ["1/3", "Setelah mengunggah ke Srikandi → <b>Tandai sudah diunggah</b>."], ["2/3", "Nomor naskah tercatat (terbaca dari PDF, atau <b>Catat nomor Srikandi</b> manual — hanya sekali)."], ["3/3", "<b>Unggah PDF hasil Srikandi</b> → <b>Selesai di Srikandi</b>. PDF final dapat dilihat kembali dan boleh diganti; penggantian tercatat."]], [2.4, 14.6]),
@@ -166,6 +166,30 @@ peran("kepala", "Kepala Puskesmas", "Memantau, menyetujui, mengoreksi pembayaran
       [["Dokumen menunggu persetujuan saya.", "Berarti kepala_wajib = 1 atau pembuat memilih menunggu; buka <b>Perlu tindakan</b>."], ["Lupa password pengguna.", "Admin menjalankan <b>python -m app.admin atur-sandi USERNAME</b>."], ["Sesi habis tiba-tiba.", "Server dimulai ulang atau lewat 12 jam; masuk lagi."]])
 
 
+SALIN = callout("tip", "Tombol Salin di samping nomor", "Di daftar Surat Tugas, rincian ST, dan tab Nomor surat umum, klik <b>⧉ Salin</b> di samping nomor (nomor SIKADIN maupun nomor Srikandi) untuk menyalinnya ke papan klip, lalu tempel di Srikandi atau dokumen lain tanpa mengetik ulang.")
+
+KODE = [P("Database kode surat (klasifikasi arsip)", "h2"),
+        P("Daftar kode klasifikasi (mis. <b>000.1.2.3</b> Perjalanan Dinas Pegawai) yang muncul sebagai saran saat Anda mengisi kolom Klasifikasi pada penerbitan nomor surat. Letaknya di menu <b>Surat</b> → tab <b>Nomor surat umum</b>, bagian <b>Database kode surat</b>.", "n"),
+        langkah([("Tambah satu kode", "Klik <b>+ Tambah kode</b>, isi Kode dan Uraian, simpan. Kode ganda ditolak."),
+                 ("Impor dari Excel/CSV", "Klik <b>Template</b> untuk mengunduh contoh, isi kolom <b>Kode</b> dan <b>Uraian</b> (kolom Kode berformat Teks agar 000.1.2.3 tidak berubah jadi angka), lalu <b>Impor Excel/CSV</b>. Kode yang sudah ada diperbarui uraiannya; bila satu baris salah, seluruh impor dibatalkan; maksimal 5.000 baris."),
+                 ("Ubah, nonaktifkan, hapus", "<b>Ubah</b> untuk memperbaiki uraian atau menonaktifkan kode (tidak muncul lagi di saran). Nomor surat yang sudah terbit tidak terpengaruh."),
+                 ("Ekspor &amp; cari", "<b>Ekspor Excel</b> mengunduh seluruh daftar; kotak <b>Cari</b> menyaring menurut kode atau uraian.")]),
+        callout("info", "Siapa yang dapat mengelola", "Kepala, Bendahara, Bendahara BLUD, dan Pembuat Surat Tugas dapat menambah/mengubah/mengimpor. Peran lain hanya melihat saran kode.")]
+
+LAPORAN = [P("Laporan perjalanan dinas &amp; foto kegiatan", "h2"),
+           langkah([("Buka ST", "Menu <b>Surat</b> → tab <b>Surat Tugas &amp; SPD</b> → <b>Buka</b> pada ST Anda."),
+                    ("Klik <b>📷 Isi laporan &amp; unggah foto</b>", "Isi <b>tanggal laporan</b> dan <b>laporan kronologis</b> (mis. “Telah dilaksanakan kegiatan tindak lanjut posyandu …”)."),
+                    ("Tambah foto", "<b>+ Tambah foto</b>: maksimal 6 foto JPG/PNG/WebP (dari kamera HP boleh). Foto dikecilkan otomatis; <b>Hapus</b> untuk membuang. Pada dokumen foto dipotong landscape, jadi letakkan objek utama di tengah-atas."),
+                    ("Simpan laporan", "Isi ini otomatis tampil di halaman <b>Laporan Perjalanan Dinas</b> pada paket Srikandi.")])]
+
+PAKET = [P("Paket Srikandi format baru (F4)", "h2"),
+         P("Di dialog ST, bagian <b>Paket Srikandi format baru (F4)</b> mengunduh satu PDF 7 halaman kertas F4 sesuai contoh Srikandi terbaru: Surat Tugas, SPD depan &amp; belakang, Surat Pernyataan, Rincian Perjalanan Dinas + Perhitungan SPPD Rampung, Laporan Perjalanan Dinas (kronologis + foto), dan Kwitansi. Unggah PDF itu ke Srikandi; kode <b>${nomor_naskah}</b>, <b>${ttd_pengirim}</b>, <b>${nama_pengirim}</b> diisi Srikandi saat tanda tangan elektronik. Tersedia juga DOCX (hasil konversi dari PDF). Satu ST maksimal 11 petugas pada paket ini.", "n"),
+         callout("info", "Isi laporan dulu", "Foto dan laporan kronologis dibaca saat PDF dibuat. Bila laporan belum diisi, halaman 6 berisi titik-titik; isi laporan lalu unduh ulang paketnya.")]
+
+EXTRA = {"pembuat_surat": [SALIN] + LAPORAN + PAKET + KODE, "kepala": [SALIN] + LAPORAN + PAKET + KODE, "bendahara": [SALIN] + LAPORAN + PAKET + KODE,
+         "bendahara_blud": [SALIN] + LAPORAN + PAKET + KODE, "program": [SALIN] + LAPORAN + PAKET, "pegawai": LAPORAN}
+
+
 def story_peran(kode):
     r = ROLES[kode]
 
@@ -177,7 +201,7 @@ def story_peran(kode):
         s += bagian(1, "Jalur cepat", "Urutan kerja sehari-hari, dari awal sampai selesai.")
         s += [langkah(r["tugas"])]
         s += bagian(2, "Tutorial rinci")
-        s += r["rinci"]
+        s += r["rinci"] + EXTRA.get(kode, [])
         s += bagian(3, "Aturan &amp; tanya jawab")
         s += [P("Aturan yang perlu diingat", "h2"), tabel([["Hal", "Aturan"]] + r["aturan"], [3.6, 13.4]),
               P("Pertanyaan yang sering muncul", "h2"), tabel([["Pertanyaan", "Jawaban"]] + r["faq"], [5.4, 11.6]), Spacer(1, 14),

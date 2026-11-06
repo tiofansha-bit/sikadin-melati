@@ -162,3 +162,5 @@ tr.grp td{background:var(--bg);border-top:2px solid var(--line)}td.num{text-alig
 .alurmini{display:flex;flex-wrap:wrap;gap:6px}.alurmini span{padding:4px 9px;background:var(--bg);border:1px solid var(--line);font-size:.85em;color:#64748b}.alurmini span.ok{background:#dcfce7;border-color:#86efac;color:#14532d}.alurmini b{margin-right:3px}
 
 .salin{border:1px solid var(--line,#cbd5e1);background:transparent;color:inherit;border-radius:6px;padding:1px 7px;font-size:.78em;line-height:1.6;cursor:pointer;vertical-align:middle;margin-left:4px}.salin:hover{background:rgba(22,163,74,.12);border-color:#16a34a}
+
+.fotogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:6px 0}.fotogrid figure{margin:0;display:grid;gap:4px}.fotogrid img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;border:1px solid var(--line,#cbd5e1)}

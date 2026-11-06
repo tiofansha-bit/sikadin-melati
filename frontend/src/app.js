@@ -1163,6 +1163,10 @@ async function viewSurat(m) {
       ${!aktif && x.srikandi.final ? `<a class="btn small" href="/api/st/${id}/final" target="_blank">Lihat PDF final</a>` : ''}
       ${x.penuh ? `<h4 style="margin:12px 0 4px">Ekspor ke Srikandi</h4><div class="acts">${aktif ? `<button type="button" class="btn small primary" data-d="srikandi">⬇ DOCX Srikandi (ST + SPD)</button> <button type="button" class="btn small primary" data-d="srikandi_pdf">⬇ PDF Srikandi (ST + SPD)</button>` : '<span class="muted">ST dibatalkan — tidak dapat diekspor.</span>'}</div>
         <p class="muted" style="font-size:.82em;margin:4px 0">Unggah salah satu berkas (DOCX atau PDF) ke Srikandi; kode <code>\${nomor_naskah}</code>, <code>\${ttd_pengirim1/2}</code>, dst. diisi Srikandi saat TTE.</p>` : ''}
+      ${x.penuh && aktif ? `<h4 style="margin:12px 0 4px">Paket Srikandi format baru (F4)</h4><div class="acts">${L('paket_f4', 'ST · SPD · Pernyataan · Rincian · Laporan · Kwitansi')}</div>
+        <p class="muted" style="font-size:.82em;margin:4px 0">Tujuh halaman kertas F4 sesuai contoh Srikandi terbaru. Kode <code>\${nomor_naskah}</code>, <code>\${ttd_pengirim}</code>, <code>\${nama_pengirim}</code> diisi Srikandi saat TTE. Halaman Laporan memuat kronologis &amp; foto yang Anda isi di bawah. DOCX hasil konversi dari PDF.</p>` : ''}
+      ${aktif && (x.penuh || x.spd.length) ? `<h4 style="margin:12px 0 4px">Laporan perjalanan dinas &amp; foto kegiatan</h4><div class="acts"><button type="button" class="btn small primary" data-aksi="laporan">📷 Isi laporan &amp; unggah foto</button></div>
+        <p class="muted" style="font-size:.82em;margin:4px 0">Laporan kronologis dan foto (maks. 6) dipakai pada halaman Laporan Perjalanan Dinas di paket Srikandi.</p>` : ''}
       <h4 style="margin:12px 0 4px">Cetak / pratinjau (PDF)</h4><div class="acts">${L('st', 'Surat Tugas')}${L('spd', 'SPD')}${L('rincian', 'Rincian biaya')}${x.penuh ? L('paket', 'Paket ST+SPD+Rincian') : ''}</div>
       ${x.penuh ? `<div class="acts" style="margin-top:6px">${L('kuitansi', 'Kuitansi')}${L('hadir', 'Daftar hadir')}${L('riil', 'Pengeluaran riil')}${L('batal', 'Pernyataan pembatalan')}${L('kembali', 'Pernyataan pengembalian biaya')}${L('lengkap', 'Semua dokumen')}</div>` : ''}
       ${x.penuh && aktif ? `<div class="acts" style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px">${x.bisa_batal ? '<button type="button" class="btn small danger" data-aksi="batal">Batalkan ST</button>' : ''}</div>` : ''}`);
@@ -1185,12 +1189,54 @@ async function viewSurat(m) {
       if (b.dataset.d && b.dataset.f === 'docx') { download(docUrl(id, b.dataset.d) + '&format=docx', `${b.dataset.d.toUpperCase()}_${x.nomor_urut}.docx`); return; }
       if (b.dataset.d) { window.open(docUrl(id, b.dataset.d), '_blank'); return; }
       $('#dlg').close();
+      if (b.dataset.aksi === 'laporan') { laporanKegiatan(id, x, reload).catch(er => toast(er.message, 1)); return; }
       if (b.dataset.aksi === 'tandai') { api(`/api/st/${id}/tandai-srikandi`, { method: 'POST' }).then(() => { toast('Ditandai: menunggu tanda tangan elektronik di Srikandi.'); reload(); }).catch(er => toast(er.message, 1)); return; }
       if (b.dataset.aksi === 'nomor') dialog('Catat nomor Srikandi', `<p class="muted">Salin nomor naskah dari Srikandi setelah ST ditandatangani. Hanya dapat diisi sekali.</p><label>Nomor naskah<input name="nomor" placeholder="000.1.2.3/2611-1179/PKM.MELATI/XI/2026" required></label>`, async d => { await api(`/api/st/${id}/nomor-srikandi`, { method: 'PUT', body: d }); toast('Nomor Srikandi tersimpan.'); await reload(); });
       if (b.dataset.aksi === 'batal') dialog('Batalkan Surat Tugas?', `<p>ST <b>${esc(x.nomor)}</b> akan dibatalkan. Tanggal petugas tetap terkunci pada jadwal sampai jadwal diubah/dibatalkan. Nomor tidak dipakai ulang; ST pengganti memakai nomor baru.</p><label>Alasan pembatalan<input name="alasan" required minlength="5"></label>`, async d => { await api(`/api/st/${id}/batal`, { method: 'POST', body: d }); toast('ST dibatalkan.'); await reload(); }, 'Batalkan ST');
     };
   }
   m.onclick = e => { const t = e.target.closest('[data-terbit]'), b = e.target.closest('[data-buka]'); if (t) terbit(Number(t.dataset.terbit)).catch(x => toast(x.message, 1)); if (b) buka(Number(b.dataset.buka)); };
+}
+
+// ---------- laporan perjalanan dinas: kronologis + foto kegiatan ----------
+const kecilkanFoto = file => new Promise((ok, gagal) => {
+  const u = URL.createObjectURL(file), im = new Image();
+  im.onload = () => {
+    const k = Math.min(1, 1600 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+    c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+    c.toBlob(b => b ? ok(b) : gagal(new Error('Gagal memproses foto.')), 'image/jpeg', 0.85);
+  };
+  im.onerror = () => { URL.revokeObjectURL(u); gagal(new Error('Foto tidak dapat dibaca (format tidak didukung browser).')); };
+  im.src = u;
+});
+async function laporanKegiatan(id, x, reload) {
+  let L = await api(`/api/laporan-kegiatan/${id}`);
+  const grid = () => `<div class="fotogrid">${L.foto.map(f => `<figure><img src="/api/laporan-kegiatan/foto/${f.id}" alt="${esc(f.nama)}" loading="lazy"><button type="button" class="btn small danger" data-fh="${f.id}" aria-label="Hapus foto ${esc(f.nama)}">Hapus</button></figure>`).join('') || '<span class="muted">Belum ada foto.</span>'}</div>`;
+  dialog(`Laporan perjalanan dinas — ST ${x.nomor}`, `<p class="muted">Isi kronologis kegiatan dan unggah foto. Keduanya muncul di halaman <b>Laporan Perjalanan Dinas</b> pada paket Srikandi (F4).</p>
+    <label>Tanggal laporan<input name="tanggal" type="date" value="${L.tanggal || x.selesai}"></label>
+    <label>Laporan kronologis kegiatan<textarea name="kronologis" rows="5" maxlength="4000" placeholder="Mis. Telah dilaksanakan kegiatan tindak lanjut posyandu …">${esc(L.kronologis)}</textarea></label>
+    <div><b>Foto kegiatan</b> <span class="muted" id="lapJml"></span></div><div id="lapGrid">${grid()}</div>
+    <div class="acts"><label class="btn small" for="lapFoto">+ Tambah foto</label><input type="file" id="lapFoto" accept="image/*" multiple hidden></div>
+    <p class="muted" style="font-size:.82em">Maksimal 6 foto, JPG/PNG/WebP. Foto dikecilkan otomatis. Foto dipotong menjadi bingkai landscape pada dokumen; letakkan objek utama di bagian tengah-atas.</p>`,
+    async d => { await api(`/api/laporan-kegiatan/${id}`, { method: 'PUT', body: { kronologis: d.kronologis, tanggal: d.tanggal } }); toast('Laporan disimpan.'); await reload(); }, 'Simpan laporan');
+  const seg = async () => { L = await api(`/api/laporan-kegiatan/${id}`); $('#lapGrid').innerHTML = grid(); $('#lapJml').textContent = `(${L.foto.length}/6)`; };
+  $('#lapJml').textContent = `(${L.foto.length}/6)`;
+  $('#lapFoto').onchange = async e => {
+    const files = [...e.target.files]; e.target.value = ''; $('#dlgErr').textContent = '';
+    for (const f of files) {
+      try {
+        const blob = await kecilkanFoto(f);
+        const r = await fetch(`/api/laporan-kegiatan/${id}/foto?nama=${encodeURIComponent(f.name.replace(/\.[^.]+$/, '') + '.jpg')}`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
+        const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Gagal mengunggah foto.');
+      } catch (er) { $('#dlgErr').textContent = er.message; break; }
+    }
+    await seg();
+  };
+  $('#lapGrid').onclick = async e => {
+    const b = e.target.closest('[data-fh]'); if (!b) return;
+    try { await api(`/api/laporan-kegiatan/foto/${b.dataset.fh}`, { method: 'DELETE' }); await seg(); } catch (er) { $('#dlgErr').textContent = er.message; }
+  };
 }
 
 // ---------- kalkulator ----------

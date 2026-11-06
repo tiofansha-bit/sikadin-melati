@@ -12,6 +12,7 @@ from .calc import hitung
 from .core import Gagal, akses_sumber, akses_uang, audit, auth, boleh_setuju, cek_sumber, get_db, kepala_wajib, kode_sd, perlu_baca
 from . import sinkron
 from .docx_srikandi import isi_templat
+from . import laporan_kegiatan, paket_f4
 from .penomoran import bentuk_nomor, nomor_berikut, pasang_nomor
 from .docx_srikandi import cek_muat
 
@@ -343,7 +344,7 @@ def lihat_final(sid: int, user=Depends(auth), db=Depends(get_db)):
     return Response(f["data"], media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{f["nama"]}"', "Cache-Control": "private, no-store"})
 
 
-DOK_PENUH = {"st", "spd", "rincian", "riil", "batal", "kembali", "hadir", "kuitansi", "paket", "lengkap", "srikandi", "srikandi_pdf"}
+DOK_PENUH = {"st", "spd", "rincian", "riil", "batal", "kembali", "hadir", "kuitansi", "paket", "lengkap", "srikandi", "srikandi_pdf", "paket_f4"}
 DOK_PETUGAS = {"st", "spd", "rincian", "paket"}
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
@@ -384,6 +385,23 @@ def dokumen(sid: int, dok: str = "st", pegawai_id: int | None = None, mode: str 
         if not penuh:
             raise Gagal("DOCX ST/SPD hanya untuk Kepala dan pengelola keuangan.", 403)
         dok = "srikandi"   # ST/SPD DOCX = templat resmi Srikandi (ST + SPD dalam satu berkas)
+    if dok == "paket_f4":   # format baru (F4): ST, SPD, Surat Pernyataan, Rincian, Laporan + foto, Kwitansi
+        if s["status"] != "Terbit":
+            raise Gagal("Surat Tugas yang dibatalkan tidak dapat diekspor ke Srikandi.")
+        stx["urut"] = s["nomor_urut"]
+        spd_rows = db.execute("SELECT * FROM spd WHERE st_id=? ORDER BY id", (sid,)).fetchall()
+        petugas = {p["id"]: p for p in isi["petugas"]}
+        paket = [{"petugas": petugas[x["pegawai_id"]], "biaya": json.loads(x["biaya_json"]), "total": x["total"]} for x in spd_rows if x["pegawai_id"] in petugas]
+        pj = lambda peran: (lambda r: dict(r) if r else {})(db.execute("SELECT nama, nip FROM pejabat WHERE aktif=1 AND peran LIKE ? ORDER BY id LIMIT 1", (f"%{peran}%",)).fetchone())  # noqa: E731
+        lap = laporan_kegiatan.ambil(db, sid)
+        try:
+            pdf = paket_f4.buat_paket(isi, stx, paket, lap, laporan_kegiatan.data_foto(db, sid), {"bendahara_pembantu": pj("Bendahara Pengeluaran Pembantu"), "verifikator": pj("Verifikator")},
+                                      "cetak" if mode == "nama" else "srikandi", f"Paket Srikandi {stx['nomor_tampil']}")
+        except Gagal:
+            raise
+        if format == "docx":
+            return Response(_pdf_ke_docx(pdf), media_type=DOCX, headers={"Content-Disposition": f'attachment; filename="Paket_Srikandi_F4_{nama_berkas}.docx"', "Cache-Control": "no-store"})
+        return Response(pdf, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="Paket_Srikandi_F4_{nama_berkas}.pdf"', "Cache-Control": "no-store"})
     if dok == "srikandi":
         if s["status"] != "Terbit":
             raise Gagal("Surat Tugas yang dibatalkan tidak dapat diekspor ke Srikandi.")
